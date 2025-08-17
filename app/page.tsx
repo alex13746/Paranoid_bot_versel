@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,22 @@ export default function TelegramBotDashboard() {
     paranoia: 2,
     geozone: "",
   })
+
+  const [apiStatus, setApiStatus] = useState<string>("Проверка...")
+
+  const checkApiStatus = async () => {
+    try {
+      const response = await fetch("/api/status")
+      const data = await response.json()
+      setApiStatus(`✅ API работает: ${data.message}`)
+    } catch (error) {
+      setApiStatus(`❌ API недоступен: ${error}`)
+    }
+  }
+
+  useEffect(() => {
+    checkApiStatus()
+  }, [])
 
   const handleCreateReminder = () => {
     if (newReminder.text && newReminder.time) {
@@ -55,6 +71,12 @@ export default function TelegramBotDashboard() {
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-foreground">Telegram Paranoia Bot</h1>
           <p className="text-muted-foreground">Система напоминаний с регулируемым режимом паранойи 0-5</p>
+          <div className="text-sm font-mono bg-muted p-2 rounded">
+            Статус API: {apiStatus}
+            <Button size="sm" variant="outline" onClick={checkApiStatus} className="ml-2 bg-transparent">
+              Обновить
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
