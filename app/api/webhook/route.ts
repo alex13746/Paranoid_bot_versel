@@ -9,20 +9,35 @@ export async function GET(request: NextRequest) {
 
   if (setup === "true") {
     try {
-      const webhookUrl = process.env.WEBHOOK_URL!
+      console.log("[v0] Setting up webhook...")
+
+      if (!process.env.TELEGRAM_BOT_TOKEN) {
+        throw new Error("TELEGRAM_BOT_TOKEN не установлен")
+      }
+
+      if (!process.env.WEBHOOK_URL) {
+        throw new Error("WEBHOOK_URL не установлен")
+      }
+
+      const webhookUrl = process.env.WEBHOOK_URL
+      console.log("[v0] Webhook URL:", webhookUrl)
+
       const result = await bot.setWebhook(webhookUrl)
+      console.log("[v0] Webhook setup result:", result)
 
       return NextResponse.json({
         success: true,
         message: "Webhook настроен успешно",
         result,
+        webhookUrl,
       })
     } catch (error) {
+      console.error("[v0] Webhook setup error:", error)
       return NextResponse.json(
         {
           success: false,
           error: "Ошибка настройки webhook",
-          details: error,
+          details: error instanceof Error ? error.message : String(error),
         },
         { status: 500 },
       )
