@@ -9,6 +9,13 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    serverComponentsExternalPackages: [],
+  },
+  // Ensure API routes work properly
+  async rewrites() {
+    return []
+  },
 }
 
-export default nextConfig
+module.exports = nextConfig
