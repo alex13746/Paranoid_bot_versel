@@ -45,7 +45,6 @@ export default function WebReminderApp() {
         prev.map((reminder) => {
           const reminderTime = new Date(reminder.time)
           if (reminderTime <= now && reminder.status === "active") {
-            // Send browser notification based on paranoia level
             sendNotification(reminder)
             return { ...reminder, status: "overdue" as const }
           }
@@ -54,35 +53,118 @@ export default function WebReminderApp() {
       )
     }
 
-    const interval = setInterval(checkReminders, 30000) // Check every 30 seconds
+    const interval = setInterval(checkReminders, 10000) // Check every 10 seconds
     return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission()
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          new Notification("Уведомления включены!", {
+            body: "Теперь вы будете получать напоминания",
+            icon: "/favicon.ico",
+          })
+        }
+      })
     }
   }, [])
 
   const sendNotification = (reminder: Reminder) => {
+    console.log("[v0] Sending notification for reminder:", reminder.text)
+
+    // Play sound based on paranoia level
+    playNotificationSound(reminder.paranoia)
+
     if ("Notification" in window && Notification.permission === "granted") {
       const title = getParanoiaTitle(reminder.paranoia)
       const options = {
         body: reminder.text,
         icon: "/favicon.ico",
         tag: `reminder-${reminder.id}`,
-        requireInteraction: reminder.paranoia >= 4,
+        requireInteraction: reminder.paranoia >= 3,
+        silent: false,
       }
 
-      new Notification(title, options)
+      const notification = new Notification(title, options)
 
-      // For high paranoia levels, show multiple notifications
+      // Auto-close notification for low paranoia levels
+      if (reminder.paranoia <= 2) {
+        setTimeout(() => notification.close(), 5000)
+      }
+
+      // Multiple notifications for high paranoia levels
+      if (reminder.paranoia >= 3) {
+        setTimeout(() => {
+          new Notification(`ПОВТОРНО: ${title}`, { ...options, tag: `reminder-${reminder.id}-2` })
+          playNotificationSound(reminder.paranoia)
+        }, 30000) // 30 seconds later
+      }
+
       if (reminder.paranoia >= 4) {
-        setTimeout(() => new Notification(`ПОВТОРНО: ${title}`, options), 5000)
+        setTimeout(() => {
+          new Notification(`СРОЧНО: ${title}`, { ...options, tag: `reminder-${reminder.id}-3` })
+          playNotificationSound(reminder.paranoia)
+        }, 60000) // 1 minute later
       }
+
       if (reminder.paranoia === 5) {
-        setTimeout(() => new Notification(`КРИТИЧНО: ${title}`, options), 10000)
+        // Extreme paranoia - multiple notifications
+        const intervals = [90000, 120000, 180000] // 1.5, 2, 3 minutes
+        intervals.forEach((delay, index) => {
+          setTimeout(() => {
+            new Notification(`🚨 КРИТИЧНО #${index + 4}: ${title}`, {
+              ...options,
+              tag: `reminder-${reminder.id}-${index + 4}`,
+              requireInteraction: true,
+            })
+            playNotificationSound(5)
+          }, delay)
+        })
       }
+    } else {
+      // Fallback: browser alert if notifications not supported
+      alert(`${getParanoiaTitle(reminder.paranoia)}: ${reminder.text}`)
+    }
+  }
+
+  const playNotificationSound = (paranoiaLevel: number) => {
+    try {
+      // Create audio context for sound
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+
+      // Different frequencies for different paranoia levels
+      const frequencies = [440, 523, 659, 784, 880, 1047] // Musical notes
+      const frequency = frequencies[paranoiaLevel] || 440
+
+      const oscillator = audioContext.createOscillator()
+      const gainNode = audioContext.createGain()
+
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContext.destination)
+
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime)
+      oscillator.type = paranoiaLevel >= 4 ? "sawtooth" : "sine"
+
+      // Volume and duration based on paranoia level
+      const volume = Math.min(0.1 + paranoiaLevel * 0.1, 0.5)
+      const duration = paranoiaLevel >= 3 ? 1000 : 500
+
+      gainNode.gain.setValueAtTime(volume, audioContext.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000)
+
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + duration / 1000)
+
+      // Multiple beeps for high paranoia
+      if (paranoiaLevel >= 4) {
+        setTimeout(() => playNotificationSound(paranoiaLevel), 200)
+        if (paranoiaLevel === 5) {
+          setTimeout(() => playNotificationSound(paranoiaLevel), 400)
+        }
+      }
+    } catch (error) {
+      console.log("[v0] Audio not supported:", error)
     }
   }
 
@@ -100,6 +182,10 @@ export default function WebReminderApp() {
 
   const handleCreateReminder = () => {
     if (newReminder.text && newReminder.time) {
+      if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission()
+      }
+
       const reminder: Reminder = {
         id: Date.now(),
         text: newReminder.text,
@@ -110,6 +196,8 @@ export default function WebReminderApp() {
       }
       setReminders([...reminders, reminder])
       setNewReminder({ text: "", time: "", paranoia: 2 })
+
+      console.log("[v0] Created reminder:", reminder)
     }
   }
 
