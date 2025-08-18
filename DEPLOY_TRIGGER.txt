@@ -1,0 +1,3 @@
+Deploy trigger file created at: 2025-01-18 18:30
+This file forces a new deployment without VERCEL_SKIP tag.
+Web reminder app with notification system is ready for deployment.
