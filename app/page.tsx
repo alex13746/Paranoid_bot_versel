@@ -1,14 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Trash2, CheckCircle, Clock, AlertTriangle } from "lucide-react"
 
 interface Reminder {
   id: number
@@ -53,7 +45,7 @@ export default function WebReminderApp() {
       )
     }
 
-    const interval = setInterval(checkReminders, 10000) // Check every 10 seconds
+    const interval = setInterval(checkReminders, 10000)
     return () => clearInterval(interval)
   }, [])
 
@@ -73,7 +65,6 @@ export default function WebReminderApp() {
   const sendNotification = (reminder: Reminder) => {
     console.log("[v0] Sending notification for reminder:", reminder.text)
 
-    // Play sound based on paranoia level
     playNotificationSound(reminder.paranoia)
 
     if ("Notification" in window && Notification.permission === "granted") {
@@ -88,29 +79,26 @@ export default function WebReminderApp() {
 
       const notification = new Notification(title, options)
 
-      // Auto-close notification for low paranoia levels
       if (reminder.paranoia <= 2) {
         setTimeout(() => notification.close(), 5000)
       }
 
-      // Multiple notifications for high paranoia levels
       if (reminder.paranoia >= 3) {
         setTimeout(() => {
           new Notification(`ПОВТОРНО: ${title}`, { ...options, tag: `reminder-${reminder.id}-2` })
           playNotificationSound(reminder.paranoia)
-        }, 30000) // 30 seconds later
+        }, 30000)
       }
 
       if (reminder.paranoia >= 4) {
         setTimeout(() => {
           new Notification(`СРОЧНО: ${title}`, { ...options, tag: `reminder-${reminder.id}-3` })
           playNotificationSound(reminder.paranoia)
-        }, 60000) // 1 minute later
+        }, 60000)
       }
 
       if (reminder.paranoia === 5) {
-        // Extreme paranoia - multiple notifications
-        const intervals = [90000, 120000, 180000] // 1.5, 2, 3 minutes
+        const intervals = [90000, 120000, 180000]
         intervals.forEach((delay, index) => {
           setTimeout(() => {
             new Notification(`🚨 КРИТИЧНО #${index + 4}: ${title}`, {
@@ -123,18 +111,14 @@ export default function WebReminderApp() {
         })
       }
     } else {
-      // Fallback: browser alert if notifications not supported
       alert(`${getParanoiaTitle(reminder.paranoia)}: ${reminder.text}`)
     }
   }
 
   const playNotificationSound = (paranoiaLevel: number) => {
     try {
-      // Create audio context for sound
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-
-      // Different frequencies for different paranoia levels
-      const frequencies = [440, 523, 659, 784, 880, 1047] // Musical notes
+      const frequencies = [440, 523, 659, 784, 880, 1047]
       const frequency = frequencies[paranoiaLevel] || 440
 
       const oscillator = audioContext.createOscillator()
@@ -146,7 +130,6 @@ export default function WebReminderApp() {
       oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime)
       oscillator.type = paranoiaLevel >= 4 ? "sawtooth" : "sine"
 
-      // Volume and duration based on paranoia level
       const volume = Math.min(0.1 + paranoiaLevel * 0.1, 0.5)
       const duration = paranoiaLevel >= 3 ? 1000 : 500
 
@@ -156,7 +139,6 @@ export default function WebReminderApp() {
       oscillator.start(audioContext.currentTime)
       oscillator.stop(audioContext.currentTime + duration / 1000)
 
-      // Multiple beeps for high paranoia
       if (paranoiaLevel >= 4) {
         setTimeout(() => playNotificationSound(paranoiaLevel), 200)
         if (paranoiaLevel === 5) {
@@ -222,17 +204,6 @@ export default function WebReminderApp() {
     return labels[level] || "Неизвестно"
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="w-4 h-4 text-green-500" />
-      case "overdue":
-        return <AlertTriangle className="w-4 h-4 text-red-500" />
-      default:
-        return <Clock className="w-4 h-4 text-blue-500" />
-    }
-  }
-
   const activeReminders = reminders.filter((r) => r.status === "active")
   const overdueReminders = reminders.filter((r) => r.status === "overdue")
   const completedToday = reminders.filter(
@@ -240,146 +211,140 @@ export default function WebReminderApp() {
   ).length
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-gray-900 text-white p-4">
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-foreground">Paranoia Reminder</h1>
-          <p className="text-muted-foreground">Веб-система напоминаний с регулируемым режимом паранойи 0-5</p>
+          <h1 className="text-4xl font-bold">Paranoia Reminder</h1>
+          <p className="text-gray-400">Веб-система напоминаний с регулируемым режимом паранойи 0-5</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Создание напоминания */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Создать напоминание</CardTitle>
-              <CardDescription>Добавьте новое напоминание с настройкой уровня паранойи</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h2 className="text-xl font-bold mb-4">Создать напоминание</h2>
+            <div className="space-y-4">
               <div>
-                <Label htmlFor="text">Текст напоминания</Label>
-                <Textarea
-                  id="text"
+                <label className="block text-sm font-medium mb-2">Текст напоминания</label>
+                <textarea
+                  className="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 text-white"
                   placeholder="Что нужно напомнить?"
                   value={newReminder.text}
                   onChange={(e) => setNewReminder({ ...newReminder, text: e.target.value })}
+                  rows={3}
                 />
               </div>
 
               <div>
-                <Label htmlFor="time">Время</Label>
-                <Input
-                  id="time"
+                <label className="block text-sm font-medium mb-2">Время</label>
+                <input
                   type="datetime-local"
+                  className="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 text-white"
                   value={newReminder.time}
                   onChange={(e) => setNewReminder({ ...newReminder, time: e.target.value })}
                 />
               </div>
 
               <div>
-                <Label htmlFor="paranoia">Уровень паранойи: {newReminder.paranoia}</Label>
-                <Select
-                  value={newReminder.paranoia.toString()}
-                  onValueChange={(value) => setNewReminder({ ...newReminder, paranoia: Number.parseInt(value) })}
+                <label className="block text-sm font-medium mb-2">Уровень паранойи: {newReminder.paranoia}</label>
+                <select
+                  className="w-full p-3 bg-gray-700 rounded-lg border border-gray-600 text-white"
+                  value={newReminder.paranoia}
+                  onChange={(e) => setNewReminder({ ...newReminder, paranoia: Number.parseInt(e.target.value) })}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0 - Спокойно</SelectItem>
-                    <SelectItem value="1">1 - Мягко</SelectItem>
-                    <SelectItem value="2">2 - Обычно</SelectItem>
-                    <SelectItem value="3">3 - Настойчиво</SelectItem>
-                    <SelectItem value="4">4 - Агрессивно</SelectItem>
-                    <SelectItem value="5">5 - ПАНИКА</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <option value={0}>0 - Спокойно</option>
+                  <option value={1}>1 - Мягко</option>
+                  <option value={2}>2 - Обычно</option>
+                  <option value={3}>3 - Настойчиво</option>
+                  <option value={4}>4 - Агрессивно</option>
+                  <option value={5}>5 - ПАНИКА</option>
+                </select>
               </div>
 
-              <Button onClick={handleCreateReminder} className="w-full">
+              <button
+                onClick={handleCreateReminder}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+              >
                 Создать напоминание
-              </Button>
-            </CardContent>
-          </Card>
+              </button>
+            </div>
+          </div>
 
           {/* Активные напоминания */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Напоминания</CardTitle>
-              <CardDescription>Ваши активные и просроченные напоминания</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {[...overdueReminders, ...activeReminders].map((reminder) => (
-                  <div
-                    key={reminder.id}
-                    className={`p-3 border rounded-lg space-y-2 ${
-                      reminder.status === "overdue" ? "border-red-500 bg-red-50 dark:bg-red-950" : ""
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(reminder.status)}
-                        <p className="font-medium">{reminder.text}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={`${getParanoiaColor(reminder.paranoia)} text-white`}>
-                          {reminder.paranoia}
-                        </Badge>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleCompleteReminder(reminder.id)}
-                          disabled={reminder.status === "completed"}
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handleDeleteReminder(reminder.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h2 className="text-xl font-bold mb-4">Напоминания</h2>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {[...overdueReminders, ...activeReminders].map((reminder) => (
+                <div
+                  key={reminder.id}
+                  className={`p-3 border rounded-lg space-y-2 ${
+                    reminder.status === "overdue" ? "border-red-500 bg-red-900/20" : "border-gray-600"
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-3 h-3 rounded-full ${
+                          reminder.status === "completed"
+                            ? "bg-green-500"
+                            : reminder.status === "overdue"
+                              ? "bg-red-500"
+                              : "bg-blue-500"
+                        }`}
+                      ></span>
+                      <p className="font-medium">{reminder.text}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground">{new Date(reminder.time).toLocaleString("ru-RU")}</p>
-                    <p className="text-xs text-muted-foreground">Режим: {getParanoiaLabel(reminder.paranoia)}</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded text-xs text-white ${getParanoiaColor(reminder.paranoia)}`}>
+                        {reminder.paranoia}
+                      </span>
+                      <button
+                        onClick={() => handleCompleteReminder(reminder.id)}
+                        disabled={reminder.status === "completed"}
+                        className="text-green-500 hover:text-green-400 disabled:opacity-50"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={() => handleDeleteReminder(reminder.id)}
+                        className="text-red-500 hover:text-red-400"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
-                ))}
-                {reminders.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">Напоминаний пока нет. Создайте первое!</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  <p className="text-sm text-gray-400">{new Date(reminder.time).toLocaleString("ru-RU")}</p>
+                  <p className="text-xs text-gray-500">Режим: {getParanoiaLabel(reminder.paranoia)}</p>
+                </div>
+              ))}
+              {reminders.length === 0 && (
+                <p className="text-center text-gray-400 py-8">Напоминаний пока нет. Создайте первое!</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Статистика */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{activeReminders.length}</div>
-              <div className="text-sm text-muted-foreground">Активных</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-red-500">{overdueReminders.length}</div>
-              <div className="text-sm text-muted-foreground">Просрочено</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-500">{completedToday}</div>
-              <div className="text-sm text-muted-foreground">Выполнено сегодня</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-orange-500">
-                {reminders.length > 0
-                  ? Math.round(reminders.reduce((acc, r) => acc + r.paranoia, 0) / reminders.length)
-                  : 0}
-              </div>
-              <div className="text-sm text-muted-foreground">Средняя паранойя</div>
-            </CardContent>
-          </Card>
+          <div className="bg-gray-800 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-blue-500">{activeReminders.length}</div>
+            <div className="text-sm text-gray-400">Активных</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-red-500">{overdueReminders.length}</div>
+            <div className="text-sm text-gray-400">Просрочено</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-green-500">{completedToday}</div>
+            <div className="text-sm text-gray-400">Выполнено сегодня</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-orange-500">
+              {reminders.length > 0
+                ? Math.round(reminders.reduce((acc, r) => acc + r.paranoia, 0) / reminders.length)
+                : 0}
+            </div>
+            <div className="text-sm text-gray-400">Средняя паранойя</div>
+          </div>
         </div>
       </div>
     </div>
